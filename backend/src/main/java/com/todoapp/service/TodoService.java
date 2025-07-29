@@ -1,3 +1,4 @@
+// sagar-n-mutalik/backend/backend-8504ec860ca0048563c538b23a17e80f4ea23756/backend/src/main/java/com/todoapp/service/TodoService.java
 package com.todoapp.service;
 
 import com.todoapp.dto.TodoDTO;
@@ -22,7 +23,8 @@ public class TodoService {
     public List<TodoDTO> getTodosForUser(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        return todoRepository.findByuser(user).stream()
+        // Corrected repository method name
+        return todoRepository.findByUser(user).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -30,11 +32,8 @@ public class TodoService {
     public TodoDTO addTodo(String username, TodoDTO todoDTO) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        Todo todo = Todo.builder()
-                .title(todoDTO.getTitle())
-                .completed(todoDTO.isCompleted())
-                .user(user)
-                .build();
+        // Create entity from DTO
+        Todo todo = new Todo(todoDTO.task(), user);
         Todo saved = todoRepository.save(todo);
         return toDTO(saved);
     }
@@ -43,10 +42,12 @@ public class TodoService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         Todo todo = todoRepository.findById(todoId)
+                // Make sure the todo belongs to the user
                 .filter(t -> t.getUser().getId().equals(user.getId()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Todo not found"));
-        todo.setTitle(todoDTO.getTitle());
-        todo.setCompleted(todoDTO.isCompleted());
+
+        todo.setTask(todoDTO.task()); // Use 'task' field
+        todo.setCompleted(todoDTO.completed());
         Todo updated = todoRepository.save(todo);
         return toDTO(updated);
     }
@@ -60,11 +61,8 @@ public class TodoService {
         todoRepository.delete(todo);
     }
 
+    // Helper method to convert Entity to DTO
     private TodoDTO toDTO(Todo todo) {
-        return TodoDTO.builder()
-                .id(todo.getId())
-                .title(todo.getTitle())
-                .completed(todo.isCompleted())
-                .build();
+        return new TodoDTO(todo.getId(), todo.getTask(), todo.isCompleted());
     }
 }
