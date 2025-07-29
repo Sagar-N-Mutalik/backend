@@ -1,4 +1,3 @@
-// sagar-n-mutalik/backend/backend-e19bddeb0450ef02ae010ebb00e23fc2250b02a4/backend/src/main/java/com/todoapp/entity/User.java
 package com.todoapp.entity;
 
 import java.util.ArrayList;
@@ -26,8 +25,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Builder.Default // This ensures the list is always initialized
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Todo> todos = new ArrayList<>();
-
-
 }

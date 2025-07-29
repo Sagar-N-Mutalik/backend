@@ -1,4 +1,3 @@
-// sagar-n-mutalik/backend/backend-8504ec860ca0048563c538b23a17e80f4ea23756/backend/src/main/java/com/todoapp/controller/AuthController.java
 package com.todoapp.controller;
 
 import com.todoapp.dto.AuthRequest;
@@ -8,7 +7,8 @@ import com.todoapp.entity.User;
 import com.todoapp.repository.UserRepository;
 import com.todoapp.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final UserRepository userRepository;
@@ -32,11 +34,17 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
+            log.warn("Registration failed: Username '{}' is already taken.", request.username());
             return ResponseEntity.badRequest().body("Username is already taken");
         }
+        String encodedPassword = passwordEncoder.encode(request.password());
+
+        // Log the user being registered and their hashed password
+        log.info("Registering user: {}. Hashed Password: {}", request.username(), encodedPassword);
+
         User newUser = User.builder()
                 .username(request.username())
-                .password(passwordEncoder.encode(request.password()))
+                .password(encodedPassword)
                 .build();
         userRepository.save(newUser);
         return ResponseEntity.ok("User registered successfully");
@@ -44,6 +52,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
+        // Log the login attempt
+        log.info("Login attempt for user: {}", request.username());
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
